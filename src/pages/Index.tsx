@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Search, Settings, Users, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { FileText, Search, Settings, Users, CheckCircle, Clock, AlertTriangle, Mail, Phone } from 'lucide-react';
 import { initializeSampleData } from '@/utils/sampleData';
 
 const Index = () => {
@@ -165,17 +165,81 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8">
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
-              <Users className="w-4 h-4 text-white" />
+      <footer className="bg-gray-800 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Brand Section */}
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-semibold">Village Voice</span>
+              </div>
+              <p className="text-gray-400 mb-4">
+                Empowering communities through transparent civic engagement. Together, we build a better village for everyone.
+              </p>
+              <p className="text-sm text-gray-500">
+                © 2024 Village Voice. All rights reserved.
+              </p>
             </div>
-            <span className="text-lg font-semibold">Village Voice</span>
+
+            {/* Contact Information */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <Mail className="w-5 h-5 text-green-400" />
+                  <div>
+                    <p className="text-gray-300">complaints@villagevoice.gov</p>
+                    <p className="text-sm text-gray-500">General Inquiries</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Phone className="w-5 h-5 text-green-400" />
+                  <div>
+                    <p className="text-gray-300">+91 98765 43210</p>
+                    <p className="text-sm text-gray-500">24/7 Helpline</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-sm text-gray-400">
+                    Office Hours: Monday - Friday, 9:00 AM - 6:00 PM
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <div className="space-y-2">
+                <Link to="/submit" className="block text-gray-300 hover:text-green-400 transition-colors">
+                  Submit New Complaint
+                </Link>
+                <Link to="/track" className="block text-gray-300 hover:text-green-400 transition-colors">
+                  Track Your Complaint
+                </Link>
+                <Link to="/admin" className="block text-gray-300 hover:text-green-400 transition-colors">
+                  Admin Dashboard
+                </Link>
+                <a href="#" className="block text-gray-300 hover:text-green-400 transition-colors">
+                  FAQ & Help
+                </a>
+                <a href="#" className="block text-gray-300 hover:text-green-400 transition-colors">
+                  Privacy Policy
+                </a>
+              </div>
+            </div>
           </div>
-          <p className="text-gray-400">
-            Empowering communities through transparent civic engagement
-          </p>
+
+          {/* Bottom Section */}
+          <div className="border-t border-gray-700 mt-8 pt-6 text-center">
+            <p className="text-gray-400 text-sm">
+              Made with ❤️ for our village community | 
+              <span className="ml-2">Emergency: 108 | Police: 100 | Fire: 101</span>
+            </p>
+          </div>
         </div>
       </footer>
     </div>
