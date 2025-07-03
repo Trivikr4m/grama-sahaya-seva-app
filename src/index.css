@@ -95,11 +95,19 @@ All colors MUST be HSL.
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  .bordered {
+    @apply border border-gray-300;
   }
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+@layer utilities {
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+  .text-foreground {
+    color: hsl(var(--foreground));
   }
 }
