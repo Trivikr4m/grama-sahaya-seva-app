@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,9 @@ interface Complaint {
   category: string;
   description: string;
   location_address: string;
-  status: 'Pending' | 'In Progress' | 'Resolved';
+  location_lat: number;
+  location_lng: number;
+  status: string;
   created_at: string;
   photo_url?: string;
   remarks?: string;
@@ -86,7 +87,6 @@ const TrackComplaint = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
@@ -98,10 +98,8 @@ const TrackComplaint = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Search Section */}
           <Card className="shadow-lg mb-8">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-gray-800">Track Your Complaint</CardTitle>
@@ -139,7 +137,6 @@ const TrackComplaint = () => {
             </CardContent>
           </Card>
 
-          {/* Complaint Details */}
           {complaint && (
             <Card className="shadow-lg">
               <CardHeader>
@@ -158,7 +155,6 @@ const TrackComplaint = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Complaint Details Grid */}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
@@ -217,7 +213,6 @@ const TrackComplaint = () => {
                   </div>
                 </div>
 
-                {/* Photo */}
                 {complaint.photo_url && (
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Attached Photo</p>
@@ -231,7 +226,6 @@ const TrackComplaint = () => {
                   </div>
                 )}
 
-                {/* Status Timeline */}
                 <div>
                   <p className="text-sm text-gray-500 mb-4">Status Timeline</p>
                   <div className="space-y-3">

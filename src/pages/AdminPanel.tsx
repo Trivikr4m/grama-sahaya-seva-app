@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ interface Complaint {
   location_address: string;
   location_lat: number;
   location_lng: number;
-  status: 'Pending' | 'In Progress' | 'Resolved';
+  status: string;
   created_at: string;
   photo_url?: string;
   remarks?: string;
@@ -257,7 +258,6 @@ const AdminPanel = () => {
               </CardContent>
             </Card>
 
-            {/* Complaints List */}
             <div className="space-y-4">
               {filteredComplaints.length === 0 ? (
                 <Card>
