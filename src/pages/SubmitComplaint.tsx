@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Upload, MapPin } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import LocationPicker from '@/components/LocationPicker';
 
 const SubmitComplaint = () => {
   const navigate = useNavigate();
@@ -18,10 +19,11 @@ const SubmitComplaint = () => {
     mobile: '',
     category: '',
     description: '',
-    location: '',
+    location: { lat: 0, lng: 0, address: '' },
     photo: null as File | null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationSelected, setLocationSelected] = useState(false);
 
   const categories = [
     'Broken Roads',
@@ -35,6 +37,11 @@ const SubmitComplaint = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
+    setFormData(prev => ({ ...prev, location }));
+    setLocationSelected(true);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +62,17 @@ const SubmitComplaint = () => {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate location selection
+    if (!locationSelected || !formData.location.address) {
+      toast({
+        title: "Error",
+        description: "Please select a location on the map",
         variant: "destructive"
       });
       setIsSubmitting(false);
@@ -185,20 +203,15 @@ const SubmitComplaint = () => {
                   />
                 </div>
 
-                {/* Location Field */}
+                {/* Location Field with Map */}
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location (Optional)</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <Input
-                      id="location"
-                      type="text"
-                      placeholder="Enter location or landmark"
-                      value={formData.location}
-                      onChange={(e) => handleInputChange('location', e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                  <Label htmlFor="location">Location *</Label>
+                  <LocationPicker onLocationSelect={handleLocationSelect} />
+                  {formData.location.address && (
+                    <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                      <strong>Selected Address:</strong> {formData.location.address}
+                    </div>
+                  )}
                 </div>
 
                 {/* Photo Upload Field */}
