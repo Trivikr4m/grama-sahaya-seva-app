@@ -10,10 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import LocationPicker from '@/components/LocationPicker';
 
 const SubmitComplaint = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -53,8 +56,38 @@ const SubmitComplaint = () => {
     return `VV${Date.now().toString().slice(-6)}`;
   };
 
+  const uploadPhoto = async (file: File, complaintId: string) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${complaintId}-${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('complaint-photos')
+      .upload(fileName, file);
+
+    if (error) {
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('complaint-photos')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to submit a complaint",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
     setIsSubmitting(true);
 
     // Validate required fields
@@ -80,28 +113,35 @@ const SubmitComplaint = () => {
     }
 
     try {
-      // Generate unique complaint ID
       const complaintId = generateComplaintId();
-      
-      // Create complaint object
-      const complaint = {
-        id: complaintId,
-        ...formData,
-        status: 'Pending',
-        dateSubmitted: new Date().toISOString(),
-        photoUrl: formData.photo ? URL.createObjectURL(formData.photo) : null
-      };
+      let photoUrl = null;
 
-      // Get existing complaints from localStorage
-      const existingComplaints = JSON.parse(localStorage.getItem('complaints') || '[]');
-      
-      // Add new complaint
-      existingComplaints.push(complaint);
-      
-      // Save to localStorage
-      localStorage.setItem('complaints', JSON.stringify(existingComplaints));
+      // Upload photo if provided
+      if (formData.photo) {
+        photoUrl = await uploadPhoto(formData.photo, complaintId);
+      }
 
-      // Show success message
+      // Create complaint in database
+      const { error } = await supabase
+        .from('complaints')
+        .insert({
+          complaint_id: complaintId,
+          user_id: user.id,
+          name: formData.name,
+          mobile: formData.mobile,
+          category: formData.category,
+          description: formData.description,
+          location_lat: formData.location.lat,
+          location_lng: formData.location.lng,
+          location_address: formData.location.address,
+          photo_url: photoUrl,
+          status: 'Pending'
+        });
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Success!",
         description: `Your complaint has been submitted. ID: ${complaintId}`,
@@ -112,10 +152,11 @@ const SubmitComplaint = () => {
         navigate(`/track?id=${complaintId}`);
       }, 2000);
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error submitting complaint:', error);
       toast({
         title: "Error",
-        description: "Failed to submit complaint. Please try again.",
+        description: error.message || "Failed to submit complaint. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -144,6 +185,13 @@ const SubmitComplaint = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-gray-800">Submit Your Complaint</CardTitle>
               <p className="text-gray-600">Help us improve our village by reporting civic issues</p>
+              {!user && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-yellow-800 text-sm">
+                    You need to <Link to="/auth" className="text-yellow-900 underline font-medium">sign in</Link> to submit complaints.
+                  </p>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -160,7 +208,6 @@ const SubmitComplaint = () => {
                   />
                 </div>
 
-                {/* Mobile Field */}
                 <div className="space-y-2">
                   <Label htmlFor="mobile">Mobile Number *</Label>
                   <Input
@@ -173,7 +220,6 @@ const SubmitComplaint = () => {
                   />
                 </div>
 
-                {/* Category Field */}
                 <div className="space-y-2">
                   <Label htmlFor="category">Issue Category *</Label>
                   <Select onValueChange={(value) => handleInputChange('category', value)}>
@@ -190,7 +236,6 @@ const SubmitComplaint = () => {
                   </Select>
                 </div>
 
-                {/* Description Field */}
                 <div className="space-y-2">
                   <Label htmlFor="description">Description *</Label>
                   <Textarea
@@ -203,7 +248,6 @@ const SubmitComplaint = () => {
                   />
                 </div>
 
-                {/* Location Field with Map */}
                 <div className="space-y-2">
                   <Label htmlFor="location">Location *</Label>
                   <LocationPicker onLocationSelect={handleLocationSelect} />
@@ -214,7 +258,6 @@ const SubmitComplaint = () => {
                   )}
                 </div>
 
-                {/* Photo Upload Field */}
                 <div className="space-y-2">
                   <Label htmlFor="photo">Photo (Optional)</Label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
@@ -238,11 +281,10 @@ const SubmitComplaint = () => {
                   </div>
                 </div>
 
-                {/* Submit Button */}
                 <Button
                   type="submit"
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !user}
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Complaint'}
                 </Button>

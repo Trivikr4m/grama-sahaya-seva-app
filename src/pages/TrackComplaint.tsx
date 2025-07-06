@@ -7,17 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Search, Calendar, MapPin, Phone, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Complaint {
   id: string;
+  complaint_id: string;
   name: string;
   mobile: string;
   category: string;
   description: string;
-  location: string;
+  location_address: string;
   status: 'Pending' | 'In Progress' | 'Resolved';
-  dateSubmitted: string;
-  photoUrl?: string;
+  created_at: string;
+  photo_url?: string;
   remarks?: string;
 }
 
@@ -34,7 +36,7 @@ const TrackComplaint = () => {
     }
   }, [searchParams]);
 
-  const handleSearch = (id?: string) => {
+  const handleSearch = async (id?: string) => {
     const searchId = id || complaintId;
     if (!searchId.trim()) {
       setError('Please enter a complaint ID');
@@ -45,14 +47,21 @@ const TrackComplaint = () => {
     setError('');
 
     try {
-      const complaints = JSON.parse(localStorage.getItem('complaints') || '[]');
-      const foundComplaint = complaints.find((c: Complaint) => c.id === searchId);
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('*')
+        .eq('complaint_id', searchId)
+        .single();
 
-      if (foundComplaint) {
-        setComplaint(foundComplaint);
-      } else {
-        setError('Complaint not found. Please check your complaint ID.');
+      if (error) {
+        if (error.code === 'PGRST116') {
+          setError('Complaint not found. Please check your complaint ID.');
+        } else {
+          setError('Error retrieving complaint data.');
+        }
         setComplaint(null);
+      } else {
+        setComplaint(data);
       }
     } catch (err) {
       setError('Error retrieving complaint data.');
@@ -137,7 +146,7 @@ const TrackComplaint = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <CardTitle className="text-xl text-gray-800">
-                      Complaint #{complaint.id}
+                      Complaint #{complaint.complaint_id}
                     </CardTitle>
                     <p className="text-gray-600 mt-1">
                       Category: {complaint.category}
@@ -173,17 +182,17 @@ const TrackComplaint = () => {
                       <div>
                         <p className="text-sm text-gray-500">Date Submitted</p>
                         <p className="font-medium text-gray-800">
-                          {new Date(complaint.dateSubmitted).toLocaleDateString()}
+                          {new Date(complaint.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
 
-                    {complaint.location && (
+                    {complaint.location_address && (
                       <div className="flex items-center space-x-3">
                         <MapPin className="w-5 h-5 text-gray-400" />
                         <div>
                           <p className="text-sm text-gray-500">Location</p>
-                          <p className="font-medium text-gray-800">{complaint.location}</p>
+                          <p className="font-medium text-gray-800">{complaint.location_address}</p>
                         </div>
                       </div>
                     )}
@@ -209,12 +218,12 @@ const TrackComplaint = () => {
                 </div>
 
                 {/* Photo */}
-                {complaint.photoUrl && (
+                {complaint.photo_url && (
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Attached Photo</p>
                     <div className="bg-gray-100 p-4 rounded-md">
                       <img
-                        src={complaint.photoUrl}
+                        src={complaint.photo_url}
                         alt="Complaint"
                         className="max-w-full h-auto rounded-md shadow-sm"
                       />
@@ -230,7 +239,7 @@ const TrackComplaint = () => {
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                       <span className="text-gray-800">Complaint Submitted</span>
                       <span className="text-gray-500 text-sm">
-                        {new Date(complaint.dateSubmitted).toLocaleDateString()}
+                        {new Date(complaint.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     {complaint.status !== 'Pending' && (

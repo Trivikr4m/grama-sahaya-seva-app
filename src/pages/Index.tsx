@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Search, Settings, Users, CheckCircle, Clock, AlertTriangle, Mail, Phone } from 'lucide-react';
-import { initializeSampleData } from '@/utils/sampleData';
+import { FileText, Search, Settings, Users, CheckCircle, Clock, AlertTriangle, Mail, Phone, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const [stats, setStats] = useState({
     totalComplaints: 0,
     pending: 0,
@@ -15,18 +17,36 @@ const Index = () => {
   });
 
   useEffect(() => {
-    // Initialize sample data if needed
-    initializeSampleData();
-    
-    // Load actual stats from localStorage
-    const complaints = JSON.parse(localStorage.getItem('complaints') || '[]');
-    setStats({
-      totalComplaints: complaints.length,
-      pending: complaints.filter((c: any) => c.status === 'Pending').length,
-      inProgress: complaints.filter((c: any) => c.status === 'In Progress').length,
-      resolved: complaints.filter((c: any) => c.status === 'Resolved').length
-    });
+    const loadStats = async () => {
+      try {
+        const { data: complaints, error } = await supabase
+          .from('complaints')
+          .select('status');
+
+        if (error) {
+          console.error('Error loading stats:', error);
+          return;
+        }
+
+        const stats = {
+          totalComplaints: complaints?.length || 0,
+          pending: complaints?.filter(c => c.status === 'Pending').length || 0,
+          inProgress: complaints?.filter(c => c.status === 'In Progress').length || 0,
+          resolved: complaints?.filter(c => c.status === 'Resolved').length || 0
+        };
+
+        setStats(stats);
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    };
+
+    loadStats();
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -40,10 +60,28 @@ const Index = () => {
               </div>
               <h1 className="text-xl font-bold text-gray-800">Village Voice</h1>
             </div>
-            <nav className="hidden md:flex space-x-6">
-              <Link to="/submit" className="text-gray-600 hover:text-green-600 transition-colors">Submit Complaint</Link>
-              <Link to="/track" className="text-gray-600 hover:text-green-600 transition-colors">Track Status</Link>
-              <Link to="/admin" className="text-gray-600 hover:text-green-600 transition-colors">Admin</Link>
+            <nav className="hidden md:flex items-center space-x-6">
+              {user ? (
+                <>
+                  <span className="text-sm text-gray-600">Welcome, {user.email}</span>
+                  <Link to="/submit" className="text-gray-600 hover:text-green-600 transition-colors">Submit Complaint</Link>
+                  <Link to="/track" className="text-gray-600 hover:text-green-600 transition-colors">Track Status</Link>
+                  <Link to="/admin" className="text-gray-600 hover:text-green-600 transition-colors">Admin</Link>
+                  <Button variant="outline" size="sm" onClick={handleSignOut}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/submit" className="text-gray-600 hover:text-green-600 transition-colors">Submit Complaint</Link>
+                  <Link to="/track" className="text-gray-600 hover:text-green-600 transition-colors">Track Status</Link>
+                  <Link to="/admin" className="text-gray-600 hover:text-green-600 transition-colors">Admin</Link>
+                  <Link to="/auth">
+                    <Button variant="outline" size="sm">Sign In</Button>
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         </div>
@@ -73,6 +111,13 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
+            {!user && (
+              <div className="mt-4">
+                <Link to="/auth" className="text-green-600 hover:text-green-700 underline">
+                  Sign in to access all features
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>
